@@ -18,7 +18,7 @@
 }
 
 .info-btn {
-    background-color: #FF6700;
+    background-color: rgb(83, 166, 101);
     color: white;
     border: none;
     padding: 8px 16px;
@@ -29,7 +29,7 @@
 }
 
 .info-btn:hover {
-    background-color: #e55d00;
+    background-color: rgb(83, 166, 101);
 }
 
 .modal-overlay {
@@ -73,7 +73,7 @@
 }
 
 .modal-header h2 {
-    color: #FF6700;
+    color: rgb(83, 166, 101);
     margin: 0;
     font-size: 24px;
 }
