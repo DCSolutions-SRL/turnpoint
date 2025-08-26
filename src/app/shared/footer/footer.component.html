@@ -1,0 +1,28 @@
+<footer class="footer">
+    <span class="footer-text">Sistema desarrollado por DC Solutions SRL</span>
+    <button class="info-btn" (click)="openModal()">
+        <i class="fa-solid fa-info-circle"></i> Más información
+    </button>
+</footer>
+
+<div class="modal-overlay" [class.closing]="isClosing" *ngIf="showModal" (click)="closeModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h2>TurnPoint</h2>
+        </div>
+        <div class="modal-body">
+            <h3>Información del Sistema</h3>
+            <p><strong>Desarrollador:</strong> DC Solutions SRL</p>
+            <p><strong>Versión:</strong> 1.1.0</p>
+            <p><strong>Año:</strong> 2025</p>
+            
+            <h3>Tecnologías Utilizadas</h3>
+            <ul class="tech-list">
+                <li><strong>Frontend:</strong> Angular 19</li>
+                <li><strong>Backend:</strong> .NET 8</li>
+                <li><strong>BB.DD.:</strong> SQL Server</li>
+            </ul>
+        </div>
+        <button class="close-btn" (click)="closeModal()">Cerrar</button>
+    </div>
+</div>

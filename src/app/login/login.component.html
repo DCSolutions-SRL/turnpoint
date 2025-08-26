@@ -1,0 +1,19 @@
+<div class="d-flex justify-content-center align-items-center vh-100">
+    <div class="card p-4 shadow-sm border bg-secondary" style="width: 100%; max-width: 400px;">
+      <h2 class="text-center mb-4 text-light text-wrap"><b>TurnPoint</b></h2>
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <div class="form-floating mb-3">
+          <input 
+            type="text" 
+            class="form-control" 
+            id="floatingInput" 
+            formControlName="usuario" 
+            placeholder="N° Legajo" 
+            required
+          >
+          <label for="floatingInput">N° Legajo</label>
+        </div>
+        <button type="submit" class="btn btn-dark w-100">Iniciar Sesion</button>
+      </form>
+    </div>
+  </div>

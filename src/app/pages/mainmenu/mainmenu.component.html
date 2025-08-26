@@ -1,0 +1,59 @@
+<div class="col-12">
+    <div class="row">
+        <app-navbar></app-navbar>
+    </div>
+    <div class="row align-items-center" style="margin-top: 5%;">       
+        <div class="parent">
+            <div class="div1">
+                <div class="card">
+                    <div class="card-header text-black" style="background-color: #f99c24;">
+                        <h1 class="mb-0">Caja</h1>
+                    </div>
+                    <div class="card-body">
+                        <h4><b>Sección: 
+                            <span *ngIf="nSeccion === 1">Poker Room</span>
+                            <span *ngIf="nSeccion === 2">Nucleo 1</span>
+                            <span *ngIf="nSeccion === 3">Nucleo 2</span>
+                            <span *ngIf="nSeccion === 4">Nucleo 3</span>
+                        </b></h4>
+                        <h4><b>Caja N°{{nCaja}}</b></h4>
+                    </div>
+                </div>
+            </div>
+            <div class="div2">
+                <div class="card">
+                    <div class="card-header text-black" style="background-color: #f99c24;">
+                        <h1 class="mb-0">Disponibilidad</h1>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-6">
+                                <span *ngIf="this.disponibilidad===true">
+                                    <span class="badge bg-success" style="font-size: 20px; padding: 0.5rem 1rem;">DISPONIBLE</span>
+                                </span>
+                                <span *ngIf="this.disponibilidad!==true">
+                                    <span class="badge bg-dark" style="font-size: 20px; padding: 0.5rem 1rem;">EN ESPERA</span>
+                                </span>
+                            </div>
+                            <div class="col-2"></div>
+                            <div class="col-4">
+                                <button type="button" (click)="switchDisponibilidad()" class="btn btn-info">Mostrar Disponibilidad</button>
+                            </div>
+                            <div class="col-1"></div>
+                            
+                            <!-- <div class="col-12">
+                                <h5>Tiempo ocupado:</h5>
+                                <span class="badge bg-danger" style="font-size: 20px; padding: 0.5rem 1rem;">{{timerNoDisponible}}</span>
+                            </div> -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="div3">
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <app-footer></app-footer>
+    </div>
+</div>

@@ -1,0 +1,120 @@
+<div class="col-12">
+    <div class="row">
+        <app-navbar></app-navbar>
+    </div>
+    <div class="row mt-5">
+        <div class="content-container">
+            <!-- Tabla de usuarios -->
+            <div class="table-container">
+                <h6 class="mb-3">Usuarios registrados</h6>
+                <div class="caption-container">
+                    <div class="row mt-2 mb-2">
+                        <div class="col-4">
+                            <div class="d-flex align-items-center">
+                                <span class="me-2">Filas por página:</span>
+                                <select class="form-select form-select-sm" style="width: auto;" [(ngModel)]="itemsPerPage">
+                                    <option [value]="5">5</option>
+                                    <option [value]="10">10</option>
+                                    <option [value]="15">15</option>
+                                    <option [value]="20">20</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-8">
+                            <pagination-controls
+                                *ngIf="usuarios.length > itemsPerPage"
+                                (pageChange)="currentPageTotal = $event"
+                                [maxSize]="itemsPerPage"
+                                [directionLinks]="false"
+                                [autoHide]="true"
+                                style="float: right; margin-top: 10px;"
+                            ></pagination-controls>
+                        </div>
+                    </div>                
+                </div>
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th>Apellido</th>
+                            <th>Nombre</th>
+                            <th>N° Legajo / Usuario</th>
+                            <th>Rol</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let usuario of usuarios | paginate: { itemsPerPage: itemsPerPage, currentPage: currentPageTotal }">
+                            <td>{{ usuario.apellido }}</td>
+                            <td>{{ usuario.nombre }}</td>
+                            <td>{{ usuario.usuario }}</td>
+                            <td><b>{{ usuario.rol === 1 ? 'ADMINISTRADOR' : usuario.rol === 2 ? 'USUARIO' : '' }}</b></td>
+                            <td>
+                                <button *ngIf="usuario.idUsuario!==this.idUsuario" class="btn-delete" (click)="deleteUsuario(usuario.idUsuario)">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <!-- Formulario para añadir usuario -->
+            <div class="form-container">
+                <form [formGroup]="form" (ngSubmit)="onSubmit()">
+                    <h6 class="text-center">Añadir Usuario:</h6>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <input type="text" class="form-control" formControlName="nombre" placeholder="Nombre">
+                        </div>
+                        <div class="col-6">
+                            <input type="text" class="form-control" formControlName="apellido" placeholder="Apellido">
+                        </div>
+                    </div>
+                    <div class="row g-2 mt-2">
+                        <div class="col-12">
+                            <input type="text" class="form-control" formControlName="usuario" autocomplete="username" placeholder="Legajo">
+                        </div>
+                    </div>
+                    <div class="row justify-content-center mt-3">
+                        <div class="col-12">
+                            <h5>Seleccione el rol:</h5>
+                            <select formControlName="rol" class="form-select">
+                                <option value="1">Administrador</option>
+                                <option value="2">Usuario</option>
+                            </select>
+                        </div>
+                        <div *ngIf="insertPassword === true" class="col-12 mt-5">
+                            <div class="row">
+                                <div class="col-6">
+                                    <label for="password">
+                                        Inserte contraseña:
+                                    </label>
+                                </div>
+                                <div class="col-6 d-flex align-items-center">
+                                    <input 
+                                        [type]="showPassword ? 'text' : 'password'" 
+                                        class="form-control" 
+                                        formControlName="password" 
+                                        placeholder="Contraseña"
+                                        autocomplete="current-password"
+                                        >
+                                    <button 
+                                        type="button" 
+                                        class="btn btn-outline-secondary ms-2" 
+                                        (click)="togglePasswordVisibility()">
+                                        <i [class]="showPassword ? 'bi btn-outline-dark bi-eye-slash' : 'bi btn-outline-dark bi-eye'"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center mt-3">
+                        <button type="submit" class="btn btn-primary">Habilitar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <app-footer></app-footer>
+    </div>
+</div>

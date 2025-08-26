@@ -1,0 +1,17 @@
+<div class="background-container">
+    <div class="content-container">
+      <div class="header-title">Nucleo 3</div>
+  
+      <div *ngIf="mensajeCaja" class="mensaje-caja">
+        <div class="mensaje-texto">DIRÍJASE A LA CAJA N°</div>
+        <div class="mensaje-numero">{{ mensajeCaja }}</div>
+      </div>
+
+      <div *ngIf="showVideo" class="video-container" [ngClass]="{'fade-in': showVideo && !videoFadingOut, 'fade-out': videoFadingOut}">
+        <video autoplay loop muted class="background-video" #videoPlayer>
+          <source src="placeholder.mp4" type="video/mp4">
+          Tu navegador no soporta videos HTML5.
+        </video>
+      </div>
+    </div>
+  </div>
