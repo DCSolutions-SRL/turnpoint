@@ -3,6 +3,7 @@ import { CajasService } from '../../../services/cajas.service';
 import { CommonModule } from '@angular/common';
 import Swal from 'sweetalert2';
 import { WebsocketService } from '../../../services/websocket.service';
+import { SystemConfig, QueueManager, QueueStatus } from '../../../config/system.config';
 
 @Component({
   selector: 'app-seccion-4',
@@ -23,6 +24,7 @@ export class Seccion4Component implements OnInit, OnDestroy {
   // Cola de asignaciones y control de animaciones
   assignmentQueue: number[] = [];
   isAnimationRunning: boolean = false;
+  maxQueueSize: number = SystemConfig.MAX_DISPLAY_QUEUE_SIZE; // Maximum 10 assignments in queue
    
   constructor(private cajasSv: CajasService, private ws: WebsocketService) {}
    
@@ -34,7 +36,7 @@ export class Seccion4Component implements OnInit, OnDestroy {
       setTimeout(() => {
         this.playVideo();
       }, 100);
-    }, 3000);
+    }, SystemConfig.VIDEO_TRANSITION_DELAY);
 
     this.ws.startConnection().then(() => {
       this.ws.unirseASeccion(this.seccionLocal);
@@ -43,12 +45,19 @@ export class Seccion4Component implements OnInit, OnDestroy {
         if (seccion === this.seccionLocal) {
           console.log(`🟢 Asignación recibida para ${seccion}: Caja ${nCaja}`);
           
-          // Agregar asignación a la cola
-          this.assignmentQueue.push(nCaja);
-          
-          // Procesar cola si no hay animación corriendo
-          if (!this.isAnimationRunning) {
-            this.processNextAssignment();
+          // Check if queue has capacity before adding
+          if (QueueManager.canAddToQueue(this.assignmentQueue.length, this.maxQueueSize)) {
+            // Agregar asignación a la cola
+            this.assignmentQueue.push(nCaja);
+            console.log(`✅ Asignación agregada a la cola. Cola actual: ${this.assignmentQueue.length}/${this.maxQueueSize}`);
+            
+            // Procesar cola si no hay animación corriendo
+            if (!this.isAnimationRunning) {
+              this.processNextAssignment();
+            }
+          } else {
+            console.warn(`⚠️ Cola de visualización llena (${this.assignmentQueue.length}/${this.maxQueueSize}). Asignación rechazada para caja ${nCaja}`);
+            this.showQueueFullWarning(nCaja);
           }
         }
       });
@@ -104,7 +113,7 @@ export class Seccion4Component implements OnInit, OnDestroy {
         this.videoFadingOut = false;
         this.mensajeCaja = `${nCaja}`;
         this.scheduleMessageDisappearance();
-      }, 500); // Tiempo de la animación de fade-out
+      }, SystemConfig.FADE_OUT_DURATION); // Tiempo de la animación de fade-out
     } else {
       this.mensajeCaja = `${nCaja}`;
       this.scheduleMessageDisappearance();
@@ -126,7 +135,19 @@ export class Seccion4Component implements OnInit, OnDestroy {
         // Mostrar video 3 segundos después de que desaparezca el mensaje
         this.showVideoAfterMessage();
       }
-    }, 5000);
+    }, SystemConfig.MESSAGE_DISPLAY_DURATION);
+  }
+
+  // Método para mostrar advertencia cuando la cola está llena
+  showQueueFullWarning(nCaja: number): void {
+    console.warn(`⚠️ Cola llena en ${this.seccionLocal}. No se puede agregar la caja ${nCaja}`);
+    // Opcional: Mostrar notificación visual al usuario
+    // Esta notificación no interrumpe el flujo normal de la aplicación
+  }
+
+  // Método para obtener el estado actual de la cola
+  getQueueStatus(): QueueStatus {
+    return QueueManager.getQueueStatus(this.assignmentQueue.length, this.maxQueueSize);
   }
 
   // Actualizar el método que muestra el video después del mensaje
@@ -147,7 +168,7 @@ export class Seccion4Component implements OnInit, OnDestroy {
         this.isAnimationRunning = false;
         this.processNextAssignment();
       }, 100);
-    }, 3000);
+    }, SystemConfig.VIDEO_TRANSITION_DELAY);
   }
 
   ngOnDestroy(): void {
