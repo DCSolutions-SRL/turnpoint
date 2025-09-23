@@ -1,17 +1,38 @@
-<div class="background-container">
-    <div class="content-container">
-      <div class="header-title">Nucleo 3</div>
-  
-      <div *ngIf="mensajeCaja" class="mensaje-caja">
-        <div class="mensaje-texto">DIRÍJASE A LA CAJA N°</div>
-        <div class="mensaje-numero">{{ mensajeCaja }}</div>
+<div class="main-container">
+  <!-- Sección superior con cajas de cola -->
+  <div class="queue-section">
+    <div class="queue-title">Nucleo 3</div>
+    
+    <!-- Cajas pequeñas de cola -->
+    <div class="queue-boxes-container">
+      <!-- Caja activa (grande) -->
+      <div *ngIf="mensajeCaja" class="active-box">
+        <div class="box-label">DIRÍJASE A LA CAJA N°</div>
+        <div class="box-number">{{ mensajeCaja }}</div>
       </div>
-
-      <div *ngIf="showVideo" class="video-container" [ngClass]="{'fade-in': showVideo && !videoFadingOut, 'fade-out': videoFadingOut}">
-        <video autoplay loop muted class="background-video" #videoPlayer>
-          <source src="placeholder.mp4" type="video/mp4">
-          Tu navegador no soporta videos HTML5.
-        </video>
+      
+      <!-- Cajas de cola (pequeñas) -->
+      <div class="queue-boxes">
+        <div *ngFor="let caja of assignmentQueue.slice(0, 3); let i = index" 
+             class="queue-box" 
+             [class.priority-high]="i === 0">
+          <div class="queue-box-label">DIRÍJASE A LA CAJA N°</div>
+          <div class="queue-box-number">{{ caja }}</div>
+        </div>
+        
+        <!-- Mostrar indicador si hay más elementos en cola -->
+        <div *ngIf="assignmentQueue.length > 3" class="more-indicator">
+          +{{ assignmentQueue.length - 3 }} más
+        </div>
       </div>
     </div>
   </div>
+
+  <!-- Sección inferior con video continuo -->
+  <div class="video-section">
+    <video autoplay loop muted class="continuous-video" #videoPlayer>
+      <source src="placeholder.mp4" type="video/mp4">
+      Tu navegador no soporta videos HTML5.
+    </video>
+  </div>
+</div>

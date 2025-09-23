@@ -17,27 +17,20 @@ export class Seccion1Component implements OnInit, OnDestroy {
   @ViewChild('videoPlayer') videoPlayer!: ElementRef<HTMLVideoElement>;
   seccionLocal = 'poker-room';
   mensajeCaja: string | null = null;
-  showVideo: boolean = false;
-  videoFadingOut: boolean = false;
-  videoTimeout: any;
   messageTimeout: any;
   
-  // Cola de asignaciones y control de animaciones
+  // Cola de asignaciones
   assignmentQueue: number[] = [];
-  isAnimationRunning: boolean = false;
-  maxQueueSize: number = SystemConfig.MAX_DISPLAY_QUEUE_SIZE; // Maximum 10 assignments in queue
+  isProcessingQueue: boolean = false;
+  maxQueueSize: number = SystemConfig.MAX_DISPLAY_QUEUE_SIZE;
 
   constructor(private cajasSv: CajasService, private ws: WebsocketService) {}
 
   ngOnInit(): void {
-    // Mostrar video inicialmente después de 3 segundos
-    this.videoTimeout = setTimeout(() => {
-      this.showVideo = true;
-      // Esperamos a que el DOM se actualice para acceder al elemento de video
-      setTimeout(() => {
-        this.playVideo();
-      }, 100);
-    }, 3000);
+    // Iniciar video inmediatamente
+    setTimeout(() => {
+      this.initializeVideo();
+    }, 500);
 
     this.ws.startConnection().then(() => {
       this.ws.unirseASeccion(this.seccionLocal);
@@ -46,19 +39,16 @@ export class Seccion1Component implements OnInit, OnDestroy {
         if (seccion === this.seccionLocal) {
           console.log(`🟢 Asignación recibida para ${seccion}: Caja ${nCaja}`);
           
-          // Check if queue has capacity before adding
           if (QueueManager.canAddToQueue(this.assignmentQueue.length, this.maxQueueSize)) {
-            // Agregar asignación a la cola
             this.assignmentQueue.push(nCaja);
             console.log(`✅ Asignación agregada a la cola. Cola actual: ${this.assignmentQueue.length}/${this.maxQueueSize}`);
             
-            // Procesar cola si no hay animación corriendo
-            if (!this.isAnimationRunning) {
+            // Procesar cola si no se está procesando actualmente
+            if (!this.isProcessingQueue) {
               this.processNextAssignment();
             }
           } else {
             console.warn(`⚠️ Cola de visualización llena (${this.assignmentQueue.length}/${this.maxQueueSize}). Asignación rechazada para caja ${nCaja}`);
-            // Optionally show notification to user that queue is full
             this.showQueueFullWarning(nCaja);
           }
         }
@@ -66,105 +56,110 @@ export class Seccion1Component implements OnInit, OnDestroy {
     });
   }
 
-  // Nuevo método para procesar la siguiente asignación en la cola
-  processNextAssignment(): void {
-    if (this.assignmentQueue.length === 0) {
-      this.isAnimationRunning = false;
-      return;
-    }
-
-    this.isAnimationRunning = true;
-    const nCaja = this.assignmentQueue.shift()!;
-
-    // Limpiar timeouts existentes
-    if (this.videoTimeout) clearTimeout(this.videoTimeout);
-    if (this.messageTimeout) clearTimeout(this.messageTimeout);
-    
-    // Si el video está mostrándose, activar animación de salida
-    if (this.showVideo) {
-      this.videoFadingOut = true;
-      setTimeout(() => {
-        this.showVideo = false;
-        this.videoFadingOut = false;
-        this.mensajeCaja = `${nCaja}`;
-        this.scheduleMessageDisappearance();
-      }, SystemConfig.FADE_OUT_DURATION); // Tiempo de la animación de fade-out
-    } else {
-      this.mensajeCaja = `${nCaja}`;
-      this.scheduleMessageDisappearance();
-    }
-  }
-
-  // Nuevo método para programar la desaparición del mensaje
-  scheduleMessageDisappearance(): void {
-    this.messageTimeout = setTimeout(() => {
-      this.mensajeCaja = null;
+  // Inicializar y configurar el video para reproducción continua
+  initializeVideo(): void {
+    if (this.videoPlayer && this.videoPlayer.nativeElement) {
+      const video = this.videoPlayer.nativeElement;
       
-      // Solo mostrar video si no hay más asignaciones en cola
-      if (this.assignmentQueue.length > 0) {
-        // Procesar inmediatamente la siguiente asignación
+      // Configurar para reproducción continua
+      video.autoplay = true;
+      video.loop = true;
+      video.muted = true;
+      
+      // Eventos para asegurar reproducción continua
+      video.addEventListener('loadeddata', () => {
+        this.playVideo();
+      });
+      
+      video.addEventListener('ended', () => {
+        this.playVideo();
+      });
+      
+      video.addEventListener('pause', () => {
+        // Evitar pausas no deseadas
+        if (!video.ended) {
+          this.playVideo();
+        }
+      });
+      
+      video.addEventListener('error', (e) => {
+        console.error('Error en el video:', e);
+        // Intentar recargar el video después de un error
         setTimeout(() => {
-          this.processNextAssignment();
-        }, 100);
-      } else {
-        // Mostrar video 3 segundos después de que desaparezca el mensaje
-        this.showVideoAfterMessage();
+          video.load();
+          this.playVideo();
+        }, 1000);
+      });
+      
+      // Intentar reproducir inmediatamente si ya está cargado
+      if (video.readyState >= 2) {
+        this.playVideo();
       }
-    }, SystemConfig.MESSAGE_DISPLAY_DURATION);
+    }
   }
 
-  // Método para reproducir el video manualmente
+  // Método optimizado para reproducir el video
   playVideo(): void {
     if (this.videoPlayer && this.videoPlayer.nativeElement) {
       const video = this.videoPlayer.nativeElement;
       
-      // Verificar si el video está cargado
-      if (video.readyState >= 2) {
-        const playPromise = video.play();
-        
-        // Manejar el error si el navegador bloquea la reproducción automática
-        if (playPromise !== undefined) {
-          playPromise.catch(error => {
+      const playPromise = video.play();
+      
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            console.log('Video reproduciéndose correctamente');
+          })
+          .catch(error => {
             console.error('Error al reproducir el video:', error);
+            // Intentar nuevamente después de un breve delay
+            setTimeout(() => {
+              this.playVideo();
+            }, 500);
           });
-        }
-      } else {
-        console.log("El video aún no está cargado");
-        // Intentar reproducir cuando esté cargado
-        video.addEventListener('loadeddata', () => {
-          video.play().catch(error => {
-            console.error('Error al reproducir el video después de cargar:', error);
-          });
-        });
       }
     }
   }
 
-  // Actualizar el método que muestra el video después del mensaje
-  showVideoAfterMessage(): void {
-    this.videoTimeout = setTimeout(() => {
-      // Verificar nuevamente si hay asignaciones en cola antes de mostrar video
-      if (this.assignmentQueue.length > 0) {
-        this.isAnimationRunning = false;
-        this.processNextAssignment();
-        return;
-      }
+  // Procesar la siguiente asignación en la cola
+  processNextAssignment(): void {
+    if (this.assignmentQueue.length === 0) {
+      this.isProcessingQueue = false;
+      return;
+    }
+
+    this.isProcessingQueue = true;
+    const nCaja = this.assignmentQueue.shift()!;
+
+    // Limpiar timeout existente
+    if (this.messageTimeout) {
+      clearTimeout(this.messageTimeout);
+    }
+    
+    // Mostrar mensaje de caja
+    this.mensajeCaja = `${nCaja}`;
+    this.scheduleMessageDisappearance();
+  }
+
+  // Programar la desaparición del mensaje
+  scheduleMessageDisappearance(): void {
+    this.messageTimeout = setTimeout(() => {
+      this.mensajeCaja = null;
       
-      this.showVideo = true;
-      // Esperamos a que el DOM se actualice
-      setTimeout(() => {
-        this.playVideo();
-        // Marcar animación como completada y procesar siguiente
-        this.isAnimationRunning = false;
-        this.processNextAssignment();
-      }, 100);
-    }, SystemConfig.VIDEO_TRANSITION_DELAY);
+      // Procesar siguiente asignación si hay más en cola
+      if (this.assignmentQueue.length > 0) {
+        setTimeout(() => {
+          this.processNextAssignment();
+        }, 1000); // Breve pausa entre mensajes
+      } else {
+        this.isProcessingQueue = false;
+      }
+    }, SystemConfig.MESSAGE_DISPLAY_DURATION);
   }
 
   // Show warning when queue is full
   showQueueFullWarning(nCaja: number): void {
     console.warn(`🚫 Cola de visualización completa. No se puede mostrar caja ${nCaja} en este momento.`);
-    // Could implement a visual notification here if needed
   }
 
   // Get current queue status
@@ -183,12 +178,13 @@ export class Seccion1Component implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    // Limpiar timeouts para evitar memory leaks
-    if (this.videoTimeout) clearTimeout(this.videoTimeout);
-    if (this.messageTimeout) clearTimeout(this.messageTimeout);
+    // Limpiar timeout para evitar memory leaks
+    if (this.messageTimeout) {
+      clearTimeout(this.messageTimeout);
+    }
     
     // Limpiar cola de asignaciones
     this.assignmentQueue = [];
-    this.isAnimationRunning = false;
+    this.isProcessingQueue = false;
   }
 }

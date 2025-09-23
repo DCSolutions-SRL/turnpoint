@@ -1,119 +1,196 @@
-/* Estilo para el fondo de la página */
-.background-container {
-    position: relative;
-    height: 100vh; /* Asegura que ocupe toda la altura de la pantalla */
-    display: flex;
-    flex-direction: column;
-    overflow-y: hidden;
+/* Contenedor principal */
+.main-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
 }
 
-.background-container::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image: url('/home/soporte/turnpoint/public/ccr.png'); /* Ruta de la imagen */
-    background-position: center;
-    background-size: 50%;
-    background-repeat: no-repeat;
-    background-attachment: fixed;
-    opacity: 0.5; /* Aplica opacidad solo al fondo */
-    z-index: -1; /* Envía el fondo detrás del contenido */
+/* Sección superior - Cola */
+.queue-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Justifica el contenido al inicio (arriba) */
+  justify-content: flex-start;
+  background: #ffffff;
+  padding: 20px;
+  position: relative;
 }
 
-/* Contenedor del contenido */
-.content-container {
-    position: relative;
-    z-index: 1; /* Asegura que el contenido esté por encima del fondo */
-    width: 100%;
-    text-align: center;
+.queue-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('/ccr.png');
+  background-position: center;
+  background-size: 30%;
+  background-repeat: no-repeat;
+  opacity: 0.3;
+  z-index: 0;
 }
 
-/* Estilo del título */
-.header-title {
-    text-align: center;
-    font-size: 5rem; /* Incrementar tamaño */
-    font-weight: bold;
-    margin-bottom: 50px; /* Más espacio debajo del título */
-    color: #333;
+.queue-title {
+  font-size: 100px;
+  font-weight: bold;
+  color: #000000;
+  margin-bottom: 30px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  z-index: 1;
+  position: relative;
 }
 
-/* Estilo del mensaje */
-.mensaje-caja {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    text-align: center;
-    background-color: rgba(0, 0, 0, 0.8); /* Fondo negro con transparencia */
-    padding: 60px 80px; /* Incrementar padding */
-    border-radius: 30px; /* Bordes más redondeados */
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.5); /* Sombra más pronunciada */
-    color: white;
+.queue-boxes-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  z-index: 1;
+  position: relative;
+  width: 100%;
 }
 
-.mensaje-texto {
-    font-size: 4rem; /* Incrementar tamaño */
-    font-weight: bold;
-    color: white;
-    margin-bottom: 30px; /* Más espacio entre texto y número */
+/* Caja activa (grande) */
+.active-box {
+  background: rgba(0, 0, 0, 0.9);
+  border: 3px solid #00ff00;
+  border-radius: 20px;
+  padding: 40px 60px;
+  text-align: center;
+  box-shadow: 0 8px 20px rgba(0, 255, 0, 0.3);
+  animation: pulse 2s infinite;
 }
 
-.mensaje-numero {
-    font-size: 30rem; /* Incrementar tamaño del número */
-    font-weight: bold;
-    color: rgb(21, 255, 0); /* Color verde brillante */
-    font-family: 'Digital-7', sans-serif; /* Usa una fuente digital si está disponible */
+.box-label {
+  font-size: 3rem;
+  color: #ffffff;
+  font-weight: bold;
+  margin-bottom: 15px;
 }
 
-/* Estilos para el contenedor de video */
-.video-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 0;
-    overflow: hidden;
+.box-number {
+  font-size: 16rem;
+  color: #00ff00;
+  font-weight: bold;
+  font-family: 'Digital-7', 'Courier New', monospace;
+  /*text-shadow: 0 0 20px #00ff00;*/
 }
 
-.background-video {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    min-width: 100%;
-    min-height: 100%;
-    width: auto;
-    height: auto;
-    transform: translate(-50%, -50%);
-    object-fit: cover;
+/* Contenedor de cajas pequeñas */
+.queue-boxes {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  flex-wrap: wrap;
+  max-width: 800px;
+}
+
+/* Cajas pequeñas de cola */
+.queue-box {
+  background: rgba(0, 0, 0, 0.8);
+  border: 2px solid #00ff00;
+  border-radius: 15px;
+  padding: 20px 30px;
+  text-align: center;
+  min-width: 150px;
+  box-shadow: 0 4px 10px rgba(0, 255, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.queue-box:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 15px rgba(0, 255, 0, 0.4);
+}
+
+.queue-box.priority-high {
+  border-color: #ffff00;
+  box-shadow: 0 4px 10px rgba(255, 255, 0, 0.3);
+}
+
+.queue-box-label {
+  font-size: 0.8rem;
+  color: #ffffff;
+  font-weight: bold;
+  margin-bottom: 10px;
+  line-height: 1.2;
+}
+
+.queue-box-number {
+  font-size: 3rem;
+  color: #00ff00;
+  font-weight: bold;
+  font-family: 'Digital-7', 'Courier New', monospace;
+}
+
+.queue-box.priority-high .queue-box-number {
+  color: #ffff00;
+}
+
+/* Indicador de más elementos */
+.more-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px dashed #ffffff;
+  border-radius: 15px;
+  padding: 20px 30px;
+  color: #ffffff;
+  font-size: 1.2rem;
+  font-weight: bold;
+  min-width: 150px;
+}
+
+/* Sección inferior - Video */
+.video-section {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: #000000;
+}
+
+.continuous-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 /* Animaciones */
-.fade-in {
-    animation: fadeIn 1s ease-in-out forwards;
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 8px 20px rgba(0, 255, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 8px 25px rgba(0, 255, 0, 0.6);
+  }
 }
 
-.fade-out {
-    animation: fadeOut 0.5s ease-in-out forwards;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-}
-
-@keyframes fadeOut {
-    from {
-        opacity: 1;
-    }
-    to {
-        opacity: 0;
-    }
+/* Responsive */
+@media (max-width: 768px) {
+  .queue-title {
+    font-size: 2rem;
+  }
+  
+  .box-number {
+    font-size: 5rem;
+  }
+  
+  .queue-box-number {
+    font-size: 2rem;
+  }
+  
+  .queue-boxes {
+    gap: 10px;
+  }
+  
+  .queue-box {
+    padding: 15px 20px;
+    min-width: 120px;
+  }
 }
