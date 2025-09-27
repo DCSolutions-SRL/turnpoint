@@ -171,6 +171,117 @@
   }
 }
 
+/* NUEVO: Estilos para cajas disponibles */
+.cajas-disponibles-container {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  padding: 30px;
+  margin: 20px 0;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  z-index: 1;
+  position: relative;
+  width: 100%;
+  max-width: 1200px;
+}
+
+.cajas-disponibles-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  border-bottom: 3px solid #00ff00;
+  padding-bottom: 15px;
+}
+
+.cajas-disponibles-header h3 {
+  font-size: 2.5rem;
+  color: #000000;
+  font-weight: bold;
+  margin: 0;
+}
+
+.disponibles-count {
+  background: #00ff00;
+  color: #000000;
+  padding: 10px 20px;
+  border-radius: 25px;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.cajas-disponibles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+  justify-items: center;
+}
+
+.caja-disponible-card {
+  background: linear-gradient(145deg, #ffffff, #f0f0f0);
+  border: 3px solid #00ff00;
+  border-radius: 15px;
+  padding: 25px;
+  text-align: center;
+  box-shadow: 0 8px 20px rgba(0, 255, 0, 0.2);
+  transition: all 0.3s ease;
+  min-width: 160px;
+  animation: fadeInUp 0.5s ease-out;
+}
+
+.caja-disponible-card:hover {
+  transform: translateY(-8px) scale(1.05);
+  box-shadow: 0 12px 30px rgba(0, 255, 0, 0.4);
+  border-color: #00cc00;
+}
+
+.caja-numero {
+  font-size: 3.5rem;
+  color: #00ff00;
+  font-weight: bold;
+  font-family: 'Digital-7', 'Courier New', monospace;
+  text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+  margin-bottom: 10px;
+}
+
+.caja-status {
+  font-size: 1rem;
+  color: #000000;
+  font-weight: bold;
+  background: rgba(0, 255, 0, 0.2);
+  padding: 5px 15px;
+  border-radius: 20px;
+  display: inline-block;
+}
+
+.no-cajas-message {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 20px;
+  color: #666666;
+  font-size: 1.5rem;
+  font-style: italic;
+}
+
+.no-cajas-message p {
+  margin: 0;
+  background: rgba(255, 255, 255, 0.8);
+  padding: 20px 40px;
+  border-radius: 10px;
+  border: 2px dashed #cccccc;
+}
+
+/* Animación de entrada */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .queue-title {
@@ -192,5 +303,33 @@
   .queue-box {
     padding: 15px 20px;
     min-width: 120px;
+  }
+
+  .cajas-disponibles-container {
+    padding: 20px;
+    margin: 10px 0;
+  }
+
+  .cajas-disponibles-header h3 {
+    font-size: 1.8rem;
+  }
+
+  .disponibles-count {
+    font-size: 1rem;
+    padding: 8px 15px;
+  }
+
+  .cajas-disponibles-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+  }
+
+  .caja-disponible-card {
+    padding: 20px;
+    min-width: 140px;
+  }
+
+  .caja-numero {
+    font-size: 2.5rem;
   }
 }

@@ -12,6 +12,9 @@
             <a class="btn nav-link" *ngIf="rolUser===1" (click)="navigate('/logs')">
                 <i class="fa-solid fa-file-alt"></i> Registro de ingresos
             </a>
+            <a class="btn nav-link" *ngIf="rolUser===1" (click)="navigate('/atencion-cliente')">
+                <i class="fa-solid fa-headset"></i> Atención al Cliente
+            </a>
             <div class="user-dropdown" *ngIf="userInfo">
                 <button class="btn nav-link dropdown-toggle" (click)="toggleMenu()">
                    <i class="fa-regular fa-user"></i> {{ userInfo.nombre }} {{ userInfo.apellido }}

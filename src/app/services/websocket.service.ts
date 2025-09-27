@@ -29,6 +29,23 @@ export class WebsocketService {
       .catch(err => console.error('❌ Error al unirse a la sección:', err));
   }
 
+  // NUEVO: Escuchar cambios de estado de cajas
+  public onCambioEstadoCaja(callback: (data: { nCaja: number, seccion: number, disponible: boolean, timestamp: string }) => void) {
+    this.hubConnection.on('EstadoCajaChanged', callback);
+  }
+
+  // NUEVO: Escuchar estado inicial de cajas al conectarse
+  public onEstadoInicialCajas(callback: (cajas: any[]) => void) {
+    this.hubConnection.on('EstadoInicialCajas', callback);
+  }
+
+  // NUEVO: Notificar cambio de estado de caja
+  public notificarCambioEstado(nCaja: number, seccion: number, disponible: boolean) {
+    this.hubConnection.invoke('NotificarCambioEstado', nCaja, seccion, disponible)
+      .catch(err => console.error('❌ Error al notificar cambio de estado:', err));
+  }
+
+  // MANTENER POR COMPATIBILIDAD (por si se necesita después)
   public onAsignacion(callback: (data: { nCaja: number, seccion: string }) => void) {
     this.hubConnection.on('AsignacionRecibida', callback);
   }

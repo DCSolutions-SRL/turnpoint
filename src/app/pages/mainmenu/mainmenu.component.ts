@@ -23,7 +23,8 @@ export class MainmenuComponent {
   nSeccion: number = 0;
   nombreUsuario: string = '';
 
-  disponibilidad: boolean = false;
+  disponibilidad: boolean = true; // Inicialmente disponible
+  ocupado: boolean = false; // Nueva propiedad para el estado ocupado
   timerNoDisponible: string = '00:00';
   totalNoDisponible: string = '00:00';
 
@@ -46,6 +47,15 @@ export class MainmenuComponent {
           this.idCaja = res2.response[0].idCaja;
           this.nCaja = res2.response[0].nCaja;
           this.nSeccion = res2.response[0].seccion;
+          
+          // Inicializar estado de ocupado basado en disponibilidad actual
+          // Si disponible es true, significa que está disponible (no ocupado)
+          // Si disponible es false, significa que está ocupado
+          const disponible = res2.response[0].disponible !== undefined ? res2.response[0].disponible : true;
+          this.disponibilidad = disponible;
+          this.ocupado = !disponible;
+          
+          console.log('Estado inicial - Disponible:', this.disponibilidad, 'Ocupado:', this.ocupado);
         })
       })
 
@@ -53,6 +63,55 @@ export class MainmenuComponent {
   }
 
 
+  // NUEVO: Cambiar estado de ocupado/disponible
+  toggleEstadoOcupado() {
+    console.log('Cambiando estado de caja:', this.nCaja, 'Sección:', this.nSeccion);
+    
+    // Guardar estado anterior para rollback si es necesario
+    const estadoAnterior = this.ocupado;
+    
+  // Llamar al backend para cambiar el estado, enviando idUsuario
+  this.cajasSv.switchDisponibilidad(this.idCaja, this.idUsuario).subscribe({
+      next: (response: any) => {
+        console.log('Respuesta del backend:', response);
+        
+        // Manejar diferentes estructuras de respuesta del backend
+        let nuevoEstadoDisponible: boolean;
+        
+        if (response && typeof response.disponible !== 'undefined') {
+          // Si el backend devuelve la estructura esperada con disponible
+          nuevoEstadoDisponible = response.disponible;
+        } else if (response && typeof response.success !== 'undefined' && response.success) {
+          // Si solo devuelve success, invertir el estado actual
+          nuevoEstadoDisponible = !this.disponibilidad;
+        } else {
+          // Fallback: invertir el estado actual
+          nuevoEstadoDisponible = !this.disponibilidad;
+        }
+        
+        // Actualizar estado local
+        this.disponibilidad = nuevoEstadoDisponible;
+        this.ocupado = !nuevoEstadoDisponible;
+        
+        console.log('Estado actualizado - Ocupado:', this.ocupado, 'Disponible:', this.disponibilidad);
+        
+        // Notificar cambio via WebSocket
+        this.ws.notificarCambioEstado(this.nCaja, this.nSeccion, this.disponibilidad);
+      },
+      error: (error) => {
+        console.error('Error al cambiar estado de caja:', error);
+        
+        // Rollback al estado anterior
+        this.ocupado = estadoAnterior;
+        this.disponibilidad = !estadoAnterior;
+        
+        // Opcional: Mostrar mensaje de error al usuario
+        alert('Error al cambiar el estado de la caja. Intente nuevamente.');
+      }
+    });
+  }
+
+  // MANTENER MÉTODO ANTERIOR POR COMPATIBILIDAD (por si se necesita después)
   switchDisponibilidad() {
     console.log('N° de caja: ', this.nCaja);
     console.log('N° de seccion: ', this.nSeccion);

@@ -16,10 +16,14 @@ import { SystemConfig, QueueManager, QueueStatus } from '../../../config/system.
 export class Seccion1Component implements OnInit, OnDestroy {
   @ViewChild('videoPlayer') videoPlayer!: ElementRef<HTMLVideoElement>;
   seccionLocal = 'poker-room';
+  seccionNumero = 2; // Corregido: Poker Room está en idSeccion = 2 según la BD
+  
+  // NUEVO: Lista de cajas disponibles (reemplaza cola de asignaciones)
+  cajasDisponibles: any[] = [];
+  
+  // MANTENER PARA COMPATIBILIDAD (funcionalidad anterior)
   mensajeCaja: string | null = null;
   messageTimeout: any;
-  
-  // Cola de asignaciones
   assignmentQueue: number[] = [];
   isProcessingQueue: boolean = false;
   maxQueueSize: number = SystemConfig.MAX_DISPLAY_QUEUE_SIZE;
@@ -32,9 +36,28 @@ export class Seccion1Component implements OnInit, OnDestroy {
       this.initializeVideo();
     }, 500);
 
+    // Cargar cajas disponibles inicialmente
+    this.cargarCajasDisponibles();
+
     this.ws.startConnection().then(() => {
       this.ws.unirseASeccion(this.seccionLocal);
   
+      // NUEVO: Escuchar cambios de estado de cajas
+      this.ws.onCambioEstadoCaja((data) => {
+        if (data.seccion === this.seccionNumero) {
+          console.log(`🔄 Cambio de estado recibido para sección ${data.seccion}: Caja ${data.nCaja} - Disponible: ${data.disponible}`);
+          this.actualizarCajaEnLista(data);
+        }
+      });
+
+      // NUEVO: Escuchar estado inicial (opcional)
+      this.ws.onEstadoInicialCajas((cajas) => {
+        const cajasDeEstaSeccion = cajas.filter(c => c.seccion === this.seccionNumero);
+        console.log(`📋 Estado inicial recibido para sección ${this.seccionNumero}:`, cajasDeEstaSeccion);
+        this.cajasDisponibles = cajasDeEstaSeccion.filter(c => c.disponible);
+      });
+
+      // MANTENER FUNCIONALIDAD ANTERIOR (para compatibilidad)
       this.ws.onAsignacion(({ nCaja, seccion }) => {
         if (seccion === this.seccionLocal) {
           console.log(`🟢 Asignación recibida para ${seccion}: Caja ${nCaja}`);
@@ -43,7 +66,6 @@ export class Seccion1Component implements OnInit, OnDestroy {
             this.assignmentQueue.push(nCaja);
             console.log(`✅ Asignación agregada a la cola. Cola actual: ${this.assignmentQueue.length}/${this.maxQueueSize}`);
             
-            // Procesar cola si no se está procesando actualmente
             if (!this.isProcessingQueue) {
               this.processNextAssignment();
             }
@@ -177,6 +199,44 @@ export class Seccion1Component implements OnInit, OnDestroy {
     return Math.round((this.assignmentQueue.length / this.maxQueueSize) * 100);
   }
 
+  // NUEVOS MÉTODOS para manejo de cajas disponibles
+  cargarCajasDisponibles(): void {
+    this.cajasSv.getDisponiblesXSeccion(this.seccionNumero).subscribe({
+      next: (cajas: any[]) => {
+        this.cajasDisponibles = cajas;
+        console.log(`📋 Cajas disponibles cargadas para sección ${this.seccionNumero}:`, this.cajasDisponibles);
+      },
+      error: (error) => {
+        console.error('❌ Error al cargar cajas disponibles:', error);
+      }
+    });
+  }
+
+  actualizarCajaEnLista(data: { nCaja: number, seccion: number, disponible: boolean }): void {
+    const indiceExistente = this.cajasDisponibles.findIndex(c => c.nCaja === data.nCaja);
+    
+    if (data.disponible) {
+      // Si la caja está disponible y no está en la lista, agregarla
+      if (indiceExistente === -1) {
+        this.cajasDisponibles.push({
+          nCaja: data.nCaja,
+          seccion: data.seccion,
+          disponible: true
+        });
+        console.log(`✅ Caja ${data.nCaja} agregada a disponibles`);
+      }
+    } else {
+      // Si la caja no está disponible y está en la lista, quitarla
+      if (indiceExistente !== -1) {
+        this.cajasDisponibles.splice(indiceExistente, 1);
+        console.log(`❌ Caja ${data.nCaja} removida de disponibles`);
+      }
+    }
+    
+    // Ordenar cajas por número para mejor visualización
+    this.cajasDisponibles.sort((a, b) => a.nCaja - b.nCaja);
+  }
+
   ngOnDestroy(): void {
     // Limpiar timeout para evitar memory leaks
     if (this.messageTimeout) {
@@ -186,5 +246,8 @@ export class Seccion1Component implements OnInit, OnDestroy {
     // Limpiar cola de asignaciones
     this.assignmentQueue = [];
     this.isProcessingQueue = false;
+    
+    // Limpiar lista de cajas disponibles
+    this.cajasDisponibles = [];
   }
 }

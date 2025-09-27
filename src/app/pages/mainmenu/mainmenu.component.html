@@ -28,16 +28,21 @@
                     <div class="card-body">
                         <div class="row">
                             <div class="col-6">
-                                <span *ngIf="this.disponibilidad===true">
+                                <span *ngIf="!this.ocupado">
                                     <span class="badge bg-success" style="font-size: 20px; padding: 0.5rem 1rem;">DISPONIBLE</span>
                                 </span>
-                                <span *ngIf="this.disponibilidad!==true">
-                                    <span class="badge bg-dark" style="font-size: 20px; padding: 0.5rem 1rem;">EN ESPERA</span>
+                                <span *ngIf="this.ocupado">
+                                    <span class="badge bg-danger" style="font-size: 20px; padding: 0.5rem 1rem;">OCUPADO</span>
                                 </span>
                             </div>
                             <div class="col-2"></div>
                             <div class="col-4">
-                                <button type="button" (click)="switchDisponibilidad()" class="btn btn-info">Mostrar Disponibilidad</button>
+                                <button type="button" 
+                                        (click)="toggleEstadoOcupado()" 
+                                        [class]="!this.ocupado ? 'btn btn-warning' : 'btn btn-success'"
+                                        style="white-space: nowrap;">
+                                    {{ !this.ocupado ? 'Marcar Ocupado' : 'Marcar Disponible' }}
+                                </button>
                             </div>
                             <div class="col-1"></div>
                             

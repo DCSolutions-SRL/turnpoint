@@ -36,11 +36,14 @@ export class CajasService {
         return this.http.get(this.API_URL + 'GetInfoCaja/' + idCaja);
     }
 
-    switchDisponibilidad(idCaja: number): Observable<any> {
-        return this.http.put(this.API_URL + 'SwitchDisponibilidad/' + idCaja, {});
+    switchDisponibilidad(idCaja: number, idUsuario: number): Observable<any> {
+        return this.http.put(this.API_URL + 'SwitchDisponibilidad/' + idCaja + '?idUsuario=' + idUsuario, {});
     }
 
-
+    // Nuevo método para obtener el estado actual de una caja específica
+    getEstadoCaja(idCaja: number): Observable<any> {
+        return this.http.get(this.API_URL + 'GetEstadoCaja/' + idCaja);
+    }
 
     ///////////////////////
 

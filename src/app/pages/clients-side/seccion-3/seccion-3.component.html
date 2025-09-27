@@ -1,10 +1,31 @@
 <div class="main-container">
-  <!-- Sección superior con cajas de cola -->
+  <!-- Sección superior con cajas disponibles -->
   <div class="queue-section">
     <div class="queue-title">Nucleo 2</div>
     
-    <!-- Cajas pequeñas de cola -->
-    <div class="queue-boxes-container">
+    <!-- NUEVO: Lista de cajas disponibles -->
+    <div class="cajas-disponibles-container">
+      <div class="cajas-disponibles-header">
+        <h3>Cajas Disponibles</h3>
+        <span class="disponibles-count">{{ cajasDisponibles.length }} disponible(s)</span>
+      </div>
+      
+      <!-- Grid de cajas disponibles -->
+      <div class="cajas-disponibles-grid">
+        <div *ngFor="let caja of cajasDisponibles" class="caja-disponible-card">
+          <div class="caja-numero">{{ caja.nCaja }}</div>
+          <div class="caja-status">DISPONIBLE</div>
+        </div>
+        
+        <!-- Mensaje cuando no hay cajas disponibles -->
+        <div *ngIf="cajasDisponibles.length === 0" class="no-cajas-message">
+          <p>No hay cajas disponibles en este momento</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- MANTENER funcionalidad anterior (notificaciones temporales) -->
+    <div class="queue-boxes-container" *ngIf="mensajeCaja || assignmentQueue.length > 0">
       <!-- Caja activa (grande) -->
       <div *ngIf="mensajeCaja" class="active-box">
         <div class="box-label">DIRÍJASE A LA CAJA N°</div>
