@@ -206,7 +206,11 @@ export class Seccion4Component implements OnInit, OnDestroy {
   cargarCajasDisponibles(): void {
     this.cajasSv.getDisponiblesXSeccion(this.seccionNumero).subscribe({
       next: (cajas: any[]) => {
-        this.cajasDisponibles = cajas;
+        // Agregar timestamp a cada caja para orden FIFO
+        this.cajasDisponibles = cajas.map((caja, index) => ({
+          ...caja,
+          timestamp: Date.now() + index // Pequeño offset para mantener orden inicial
+        }));
         console.log(`📋 Cajas disponibles cargadas para sección ${this.seccionNumero}:`, this.cajasDisponibles);
       },
       error: (error) => {
@@ -219,14 +223,15 @@ export class Seccion4Component implements OnInit, OnDestroy {
     const indiceExistente = this.cajasDisponibles.findIndex(c => c.nCaja === data.nCaja);
     
     if (data.disponible) {
-      // Si la caja está disponible y no está en la lista, agregarla
+      // Si la caja está disponible y no está en la lista, agregarla AL FINAL (FIFO)
       if (indiceExistente === -1) {
         this.cajasDisponibles.push({
           nCaja: data.nCaja,
           seccion: data.seccion,
-          disponible: true
+          disponible: true,
+          timestamp: Date.now() // Timestamp para mantener orden FIFO
         });
-        console.log(`✅ Caja ${data.nCaja} agregada a disponibles`);
+        console.log(`✅ Caja ${data.nCaja} agregada a disponibles (FIFO)`);
       }
     } else {
       // Si la caja no está disponible y está en la lista, quitarla
@@ -236,8 +241,8 @@ export class Seccion4Component implements OnInit, OnDestroy {
       }
     }
     
-    // Ordenar cajas por número para mejor visualización
-    this.cajasDisponibles.sort((a, b) => a.nCaja - b.nCaja);
+    // NO ordenar - mantener orden FIFO (First In First Out)
+    // La primera caja en la lista es la que lleva más tiempo disponible
   }
 
   ngOnDestroy(): void {

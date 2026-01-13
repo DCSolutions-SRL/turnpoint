@@ -4,6 +4,9 @@
                         <a href="https://www.dcs.ar" target="_blank" rel="noopener">
                             <img src="TurnPoint_icon.svg" alt="Logo" class="navbar-logo">
                         </a>
+                        <button class="btn btn-descanso" (click)="toggleDescanso()">
+                            <i class="fa-solid fa-mug-hot"></i> Descanso
+                        </button>
         </div>
         <div class="navbar-links">
             <a class="btn nav-link" *ngIf="rolUser===1" (click)="navigate('/alta-usuarios')">
@@ -26,4 +29,13 @@
             </div>
         </div>
     </nav>  
+</div>
+
+<!-- Overlay de descanso -->
+<div class="descanso-overlay" *ngIf="descansoActivo" (click)="cancelarDescanso()">
+    <div class="descanso-content">
+        <h1>DESCANSO</h1>
+        <div class="contador" [class.tiempo-negativo]="esTiempoNegativo()">{{ tiempoRestanteFormateado }}</div>
+        <p class="instruccion">Presiona cualquier tecla o toca la pantalla para cancelar</p>
+    </div>
 </div>
