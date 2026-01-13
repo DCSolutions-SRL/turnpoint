@@ -1,8 +1,10 @@
 import { Component, OnDestroy, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { CajasService } from '../../../services/cajas.service';
 import { CommonModule } from '@angular/common';
+import { Subscription, timeout } from 'rxjs';
 import Swal from 'sweetalert2';
 import { WebsocketService } from '../../../services/websocket.service';
+import { SystemConfig, QueueManager, QueueStatus } from '../../../config/system.config';
 
 @Component({
   selector: 'app-seccion-4',
@@ -14,149 +16,246 @@ import { WebsocketService } from '../../../services/websocket.service';
 export class Seccion4Component implements OnInit, OnDestroy {
   @ViewChild('videoPlayer') videoPlayer!: ElementRef<HTMLVideoElement>;
   seccionLocal = 'nucleo-3';
+  seccionNumero = 5; // Corregido: Nucleo 3 está en idSeccion = 5 según la BD
+  
+  // NUEVO: Lista de cajas disponibles
+  cajasDisponibles: any[] = [];
+  
+  // MANTENER PARA COMPATIBILIDAD
   mensajeCaja: string | null = null;
-  showVideo: boolean = false;
-  videoFadingOut: boolean = false;
-  videoTimeout: any;
   messageTimeout: any;
   
-  // Cola de asignaciones y control de animaciones
+  // Cola de asignaciones
   assignmentQueue: number[] = [];
-  isAnimationRunning: boolean = false;
-   
+  isProcessingQueue: boolean = false;
+  maxQueueSize: number = SystemConfig.MAX_DISPLAY_QUEUE_SIZE;
+
   constructor(private cajasSv: CajasService, private ws: WebsocketService) {}
-   
+
   ngOnInit(): void {
-    // Mostrar video inicialmente después de 3 segundos
-    this.videoTimeout = setTimeout(() => {
-      this.showVideo = true;
-      // Esperamos a que el DOM se actualice para acceder al elemento de video
-      setTimeout(() => {
-        this.playVideo();
-      }, 100);
-    }, 3000);
+    // Iniciar video inmediatamente
+    setTimeout(() => {
+      this.initializeVideo();
+    }, 500);
+
+    // Cargar cajas disponibles inicialmente
+    this.cargarCajasDisponibles();
 
     this.ws.startConnection().then(() => {
       this.ws.unirseASeccion(this.seccionLocal);
   
+      // NUEVO: Escuchar cambios de estado de cajas
+      this.ws.onCambioEstadoCaja((data) => {
+        if (data.seccion === this.seccionNumero) {
+          console.log(`🔄 Cambio de estado recibido para sección ${data.seccion}: Caja ${data.nCaja} - Disponible: ${data.disponible}`);
+          this.actualizarCajaEnLista(data);
+        }
+      });
+
+      // NUEVO: Escuchar estado inicial (opcional)
+      this.ws.onEstadoInicialCajas((cajas) => {
+        const cajasDeEstaSeccion = cajas.filter(c => c.seccion === this.seccionNumero);
+        console.log(`📋 Estado inicial recibido para sección ${this.seccionNumero}:`, cajasDeEstaSeccion);
+        this.cajasDisponibles = cajasDeEstaSeccion.filter(c => c.disponible);
+      });
+
+      // MANTENER FUNCIONALIDAD ANTERIOR (para compatibilidad)
       this.ws.onAsignacion(({ nCaja, seccion }) => {
         if (seccion === this.seccionLocal) {
           console.log(`🟢 Asignación recibida para ${seccion}: Caja ${nCaja}`);
           
-          // Agregar asignación a la cola
-          this.assignmentQueue.push(nCaja);
-          
-          // Procesar cola si no hay animación corriendo
-          if (!this.isAnimationRunning) {
-            this.processNextAssignment();
+          if (QueueManager.canAddToQueue(this.assignmentQueue.length, this.maxQueueSize)) {
+            this.assignmentQueue.push(nCaja);
+            console.log(`✅ Asignación agregada a la cola. Cola actual: ${this.assignmentQueue.length}/${this.maxQueueSize}`);
+            
+            // Procesar cola si no se está procesando actualmente
+            if (!this.isProcessingQueue) {
+              this.processNextAssignment();
+            }
+          } else {
+            console.warn(`⚠️ Cola de visualización llena (${this.assignmentQueue.length}/${this.maxQueueSize}). Asignación rechazada para caja ${nCaja}`);
+            this.showQueueFullWarning(nCaja);
           }
         }
       });
     });
   }
 
-  // Método para reproducir el video manualmente
+  // Inicializar y configurar el video para reproducción continua
+  initializeVideo(): void {
+    if (this.videoPlayer && this.videoPlayer.nativeElement) {
+      const video = this.videoPlayer.nativeElement;
+      
+      // Configurar para reproducción continua
+      video.autoplay = true;
+      video.loop = true;
+      video.muted = true;
+      
+      // Eventos para asegurar reproducción continua
+      video.addEventListener('loadeddata', () => {
+        this.playVideo();
+      });
+      
+      video.addEventListener('ended', () => {
+        this.playVideo();
+      });
+      
+      video.addEventListener('pause', () => {
+        // Evitar pausas no deseadas
+        if (!video.ended) {
+          this.playVideo();
+        }
+      });
+      
+      video.addEventListener('error', (e) => {
+        console.error('Error en el video:', e);
+        // Intentar recargar el video después de un error
+        setTimeout(() => {
+          video.load();
+          this.playVideo();
+        }, 1000);
+      });
+      
+      // Intentar reproducir inmediatamente si ya está cargado
+      if (video.readyState >= 2) {
+        this.playVideo();
+      }
+    }
+  }
+
+  // Método optimizado para reproducir el video
   playVideo(): void {
     if (this.videoPlayer && this.videoPlayer.nativeElement) {
       const video = this.videoPlayer.nativeElement;
       
-      // Verificar si el video está cargado
-      if (video.readyState >= 2) {
-        const playPromise = video.play();
-        
-        // Manejar el error si el navegador bloquea la reproducción automática
-        if (playPromise !== undefined) {
-          playPromise.catch(error => {
+      const playPromise = video.play();
+      
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            console.log('Video reproduciéndose correctamente');
+          })
+          .catch(error => {
             console.error('Error al reproducir el video:', error);
+            // Intentar nuevamente después de un breve delay
+            setTimeout(() => {
+              this.playVideo();
+            }, 500);
           });
-        }
-      } else {
-        console.log("El video aún no está cargado");
-        // Intentar reproducir cuando esté cargado
-        video.addEventListener('loadeddata', () => {
-          video.play().catch(error => {
-            console.error('Error al reproducir el video después de cargar:', error);
-          });
-        });
       }
     }
   }
 
-  // Nuevo método para procesar la siguiente asignación en la cola
+  // Procesar la siguiente asignación en la cola
   processNextAssignment(): void {
     if (this.assignmentQueue.length === 0) {
-      this.isAnimationRunning = false;
+      this.isProcessingQueue = false;
       return;
     }
 
-    this.isAnimationRunning = true;
+    this.isProcessingQueue = true;
     const nCaja = this.assignmentQueue.shift()!;
 
-    // Limpiar timeouts existentes
-    if (this.videoTimeout) clearTimeout(this.videoTimeout);
-    if (this.messageTimeout) clearTimeout(this.messageTimeout);
-    
-    // Si el video está mostrándose, activar animación de salida
-    if (this.showVideo) {
-      this.videoFadingOut = true;
-      setTimeout(() => {
-        this.showVideo = false;
-        this.videoFadingOut = false;
-        this.mensajeCaja = `${nCaja}`;
-        this.scheduleMessageDisappearance();
-      }, 500); // Tiempo de la animación de fade-out
-    } else {
-      this.mensajeCaja = `${nCaja}`;
-      this.scheduleMessageDisappearance();
+    // Limpiar timeout existente
+    if (this.messageTimeout) {
+      clearTimeout(this.messageTimeout);
     }
+    
+    // Mostrar mensaje de caja
+    this.mensajeCaja = `${nCaja}`;
+    this.scheduleMessageDisappearance();
   }
 
-  // Nuevo método para programar la desaparición del mensaje
+  // Programar la desaparición del mensaje
   scheduleMessageDisappearance(): void {
     this.messageTimeout = setTimeout(() => {
       this.mensajeCaja = null;
       
-      // Solo mostrar video si no hay más asignaciones en cola
+      // Procesar siguiente asignación si hay más en cola
       if (this.assignmentQueue.length > 0) {
-        // Procesar inmediatamente la siguiente asignación
         setTimeout(() => {
           this.processNextAssignment();
-        }, 100);
+        }, 1000); // Breve pausa entre mensajes
       } else {
-        // Mostrar video 3 segundos después de que desaparezca el mensaje
-        this.showVideoAfterMessage();
+        this.isProcessingQueue = false;
       }
-    }, 5000);
+    }, SystemConfig.MESSAGE_DISPLAY_DURATION);
   }
 
-  // Actualizar el método que muestra el video después del mensaje
-  showVideoAfterMessage(): void {
-    this.videoTimeout = setTimeout(() => {
-      // Verificar nuevamente si hay asignaciones en cola antes de mostrar video
-      if (this.assignmentQueue.length > 0) {
-        this.isAnimationRunning = false;
-        this.processNextAssignment();
-        return;
+  // Show warning when queue is full
+  showQueueFullWarning(nCaja: number): void {
+    console.warn(`🚫 Cola de visualización completa. No se puede mostrar caja ${nCaja} en este momento.`);
+  }
+
+  // Get current queue status
+  getQueueStatus(): QueueStatus {
+    return QueueManager.getQueueStatus(this.assignmentQueue.length, this.maxQueueSize);
+  }
+
+  // Check if queue is at capacity
+  isQueueFull(): boolean {
+    return this.assignmentQueue.length >= this.maxQueueSize;
+  }
+
+  // Get queue utilization percentage
+  getQueueUtilization(): number {
+    return Math.round((this.assignmentQueue.length / this.maxQueueSize) * 100);
+  }
+
+  // NUEVOS MÉTODOS para manejo de cajas disponibles
+  cargarCajasDisponibles(): void {
+    this.cajasSv.getDisponiblesXSeccion(this.seccionNumero).subscribe({
+      next: (cajas: any[]) => {
+        // Agregar timestamp a cada caja para orden FIFO
+        this.cajasDisponibles = cajas.map((caja, index) => ({
+          ...caja,
+          timestamp: Date.now() + index // Pequeño offset para mantener orden inicial
+        }));
+        console.log(`📋 Cajas disponibles cargadas para sección ${this.seccionNumero}:`, this.cajasDisponibles);
+      },
+      error: (error) => {
+        console.error('❌ Error al cargar cajas disponibles:', error);
       }
-      
-      this.showVideo = true;
-      // Esperamos a que el DOM se actualice
-      setTimeout(() => {
-        this.playVideo();
-        // Marcar animación como completada y procesar siguiente
-        this.isAnimationRunning = false;
-        this.processNextAssignment();
-      }, 100);
-    }, 3000);
+    });
+  }
+
+  actualizarCajaEnLista(data: { nCaja: number, seccion: number, disponible: boolean }): void {
+    const indiceExistente = this.cajasDisponibles.findIndex(c => c.nCaja === data.nCaja);
+    
+    if (data.disponible) {
+      // Si la caja está disponible y no está en la lista, agregarla AL FINAL (FIFO)
+      if (indiceExistente === -1) {
+        this.cajasDisponibles.push({
+          nCaja: data.nCaja,
+          seccion: data.seccion,
+          disponible: true,
+          timestamp: Date.now() // Timestamp para mantener orden FIFO
+        });
+        console.log(`✅ Caja ${data.nCaja} agregada a disponibles (FIFO)`);
+      }
+    } else {
+      // Si la caja no está disponible y está en la lista, quitarla
+      if (indiceExistente !== -1) {
+        this.cajasDisponibles.splice(indiceExistente, 1);
+        console.log(`❌ Caja ${data.nCaja} removida de disponibles`);
+      }
+    }
+    
+    // NO ordenar - mantener orden FIFO (First In First Out)
+    // La primera caja en la lista es la que lleva más tiempo disponible
   }
 
   ngOnDestroy(): void {
-    // Limpiar timeouts para evitar memory leaks
-    if (this.videoTimeout) clearTimeout(this.videoTimeout);
-    if (this.messageTimeout) clearTimeout(this.messageTimeout);
+    // Limpiar timeout para evitar memory leaks
+    if (this.messageTimeout) {
+      clearTimeout(this.messageTimeout);
+    }
     
     // Limpiar cola de asignaciones
     this.assignmentQueue = [];
-    this.isAnimationRunning = false;
+    this.isProcessingQueue = false;
+    
+    // Limpiar lista de cajas disponibles
+    this.cajasDisponibles = [];
   }
 }

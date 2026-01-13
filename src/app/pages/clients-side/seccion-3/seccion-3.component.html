@@ -1,17 +1,60 @@
-<div class="background-container">
-    <div class="content-container">
-      <div class="header-title">Nucleo 2</div>
-  
-      <div *ngIf="mensajeCaja" class="mensaje-caja">
-        <div class="mensaje-texto">DIRÍJASE A LA CAJA N°</div>
-        <div class="mensaje-numero">{{ mensajeCaja }}</div>
+<div class="main-container">
+  <!-- Sección superior con cajas disponibles -->
+  <div class="queue-section">
+    <div class="queue-title">Nucleo 2</div>
+    
+    <!-- Sistema de cola: Cajas disponibles -->
+    <div class="cajas-disponibles-container" *ngIf="cajasDisponibles.length > 0">
+      <!-- Cajas pequeñas en cola (todas menos la primera) -->
+      <div class="cola-cajas-pequenas" *ngIf="cajasDisponibles.length > 1">
+        <div *ngFor="let caja of cajasDisponibles.slice(1)" class="caja-pequena">
+          <div class="caja-pequena-label">DIRÍJASE A LA CAJA N°</div>
+          <div class="caja-pequena-numero">{{ caja.nCaja }}</div>
+        </div>
       </div>
+      
+      <!-- Caja principal (la más antigua - primera en la lista) -->
+      <div class="caja-principal">
+        <div class="caja-principal-label">DIRÍJASE A LA CAJA N°</div>
+        <div class="caja-principal-numero">{{ cajasDisponibles[0].nCaja }}</div>
+      </div>
+    </div>
+    
+    <!-- Mensaje cuando no hay cajas disponibles -->
+    <div *ngIf="cajasDisponibles.length === 0" class="no-cajas-message">
+      <p>No hay cajas disponibles en este momento</p>
+    </div>
 
-      <div *ngIf="showVideo" class="video-container" [ngClass]="{'fade-in': showVideo && !videoFadingOut, 'fade-out': videoFadingOut}">
-        <video autoplay loop muted class="background-video" #videoPlayer>
-          <source src="placeholder.mp4" type="video/mp4">
-          Tu navegador no soporta videos HTML5.
-        </video>
+    <!-- MANTENER funcionalidad anterior (notificaciones temporales) -->
+    <div class="queue-boxes-container" *ngIf="mensajeCaja || assignmentQueue.length > 0">
+      <!-- Caja activa (grande) -->
+      <div *ngIf="mensajeCaja" class="active-box">
+        <div class="box-label">DIRÍJASE A LA CAJA N°</div>
+        <div class="box-number">{{ mensajeCaja }}</div>
+      </div>
+      
+      <!-- Cajas de cola (pequeñas) -->
+      <div class="queue-boxes">
+        <div *ngFor="let caja of assignmentQueue.slice(0, 3); let i = index" 
+             class="queue-box" 
+             [class.priority-high]="i === 0">
+          <div class="queue-box-label">DIRÍJASE A LA CAJA N°</div>
+          <div class="queue-box-number">{{ caja }}</div>
+        </div>
+        
+        <!-- Mostrar indicador si hay más elementos en cola -->
+        <div *ngIf="assignmentQueue.length > 3" class="more-indicator">
+          +{{ assignmentQueue.length - 3 }} más
+        </div>
       </div>
     </div>
   </div>
+
+  <!-- Sección inferior con video continuo -->
+  <div class="video-section">
+    <video autoplay loop muted class="continuous-video" #videoPlayer>
+      <source src="placeholder.mp4" type="video/mp4">
+      Tu navegador no soporta videos HTML5.
+    </video>
+  </div>
+</div>

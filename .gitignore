@@ -1,3 +1,5 @@
+# Ignorar certificados SSL de desarrollo
+ssl/
 <<<<<<< HEAD
 # See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
 
